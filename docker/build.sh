@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REGISTRY=ghcr.io/ramonvp
-IMAGE_NAME=roscon2026
+IMAGE_NAME=roscon2026_workshop  # must be called exactly like the repo
 version=1.0.0
 
 usage() {

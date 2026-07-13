@@ -65,3 +65,7 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/$USER_NAME/.bashrc
 RUN ln -s /home /Users
 
 CMD ["/bin/bash", "-c", "/change_id.sh $USER_UID $USER_GID $USER_GN $USER_TZ $SHARED_FOLDER $HOST_USER $INPUT_GID && su ${USER_NAME}"]
+
+LABEL org.opencontainers.image.source=https://github.com/ramonvp/roscon2026_workshop
+LABEL org.opencontainers.image.description="ROSCon 2026 workshop container image"
+LABEL org.opencontainers.image.licenses=Apache-2.0
