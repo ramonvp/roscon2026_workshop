@@ -7,13 +7,10 @@ ARG HTTPS_PROXY
 
 SHELL ["/bin/bash", "-c"]
 
-# Configure locales
-#ENV LC_ALL=en_US.UTF-8
-#ENV LANG=en_US.UTF-8
-#ENV LANGUAGE=en_US.UTF-8
-
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
         sudo \
+        bash-completion \
+        less \
         python3-colcon-common-extensions \
         python3-rosdep \
         git \
@@ -22,6 +19,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
         libboost-system-dev \
         libboost-thread-dev \
         rapidjson-dev \
+        ros-jazzy-rmw-zenoh-cpp \
+        ros-jazzy-ament-cmake-vendor-package \
     && rm -rf /var/lib/apt/lists/*
 
 RUN \
@@ -37,9 +36,15 @@ RUN \
 RUN echo "workshop" > /etc/debian_chroot
 
 COPY change_id.sh /
+COPY bashrc /home/$USER_NAME/.bashrc
+COPY bash_profile /home/$USER_NAME/.bash_profile
+RUN chown "$USER_NAME:$USER_NAME" "/home/$USER_NAME/.bashrc" "/home/$USER_NAME/.bash_profile"
 WORKDIR /home/$USER_NAME
 # The following env is required, so that CMD finds the variable correctly
 ENV USER_NAME=$USER_NAME
+ENV SERIAL_MODE=none
+ENV SERIAL_GID=0
+ENV TERM=xterm-256color
 
 
 # COPY src/ src/
@@ -59,12 +64,11 @@ ENV USER_NAME=$USER_NAME
 # ENTRYPOINT ["/entrypoint.sh"]
 # CMD ["bash"]
 
-RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/$USER_NAME/.bashrc
-
-# Create a symbolic link between /Users and /home, so that the host can mount the /Users folder in MacOS
+# Create a symbolic link between /Users and /home, so that the host can mount
+# the /Users folder in macOS. Native Linux runs pass /dev/ttyACM0 directly.
 RUN ln -s /home /Users
 
-CMD ["/bin/bash", "-c", "/change_id.sh $USER_UID $USER_GID $USER_GN $USER_TZ $SHARED_FOLDER $HOST_USER $INPUT_GID && su ${USER_NAME}"]
+CMD ["/bin/bash", "-c", "/change_id.sh $USER_UID $USER_GID $USER_GN $USER_TZ $SHARED_FOLDER $HOST_USER $INPUT_GID && su - ${USER_NAME}"]
 
 LABEL org.opencontainers.image.source=https://github.com/ramonvp/roscon2026_workshop
 LABEL org.opencontainers.image.description="ROSCon 2026 workshop container image"

@@ -7,6 +7,8 @@ USER_TZ=$4
 WS_FOLDER=$5
 HOST_USER=$6
 INPUT_GID=$7
+SERIAL_MODE=${SERIAL_MODE:-none}
+SERIAL_GID=${SERIAL_GID:-0}
 
 if [[ -z "${WS_FOLDER}" ]]; then
   WS_FOLDER=/home/roscon/workspaces
@@ -48,24 +50,45 @@ if [ "$INPUT_GID" != "0" ]; then
     $DO_ECHO usermod -aG input roscon
 fi
 
-# Create the virtual serial port after applying the host UID/GID, then assign
-# both the PTY and its stable symlink to the container user.
-socat -d -d \
-  PTY,link=/dev/ttyUSB0,rawer,echo=0,mode=660 \
-  TCP:host.docker.internal:7070 \
-  >/tmp/roscon2026-socat-container.log 2>&1 &
-SOCAT_PID=$!
+case "$SERIAL_MODE" in
+    tcp)
+        # macOS Docker Desktop runs containers inside a VM. Recreate the host
+        # serial device as a PTY inside the container via the host socat bridge.
+        socat -d -d \
+          PTY,link=/dev/ttyACM0,rawer,echo=0,mode=660 \
+          TCP:host.docker.internal:7070 \
+          >/tmp/roscon2026-socat-container.log 2>&1 &
+        SOCAT_PID=$!
 
-for _ in {1..50}; do
-    [ -L /dev/ttyUSB0 ] && break
-    kill -0 "$SOCAT_PID" 2>/dev/null || break
-    sleep 0.1
-done
+        for _ in {1..50}; do
+            [ -L /dev/ttyACM0 ] && break
+            kill -0 "$SOCAT_PID" 2>/dev/null || break
+            sleep 0.1
+        done
 
-if [ -L /dev/ttyUSB0 ]; then
-    chown "$USER_ID:$GID" /dev/ttyUSB0
-    chown -h "$USER_ID:$GID" /dev/ttyUSB0
-else
-    echo "[ERROR] Failed to create /dev/ttyUSB0" >&2
-    exit 1
-fi
+        if [ -L /dev/ttyACM0 ]; then
+            chown "$USER_ID:$GID" /dev/ttyACM0
+            chown -h "$USER_ID:$GID" /dev/ttyACM0
+        else
+            echo "[ERROR] Failed to create /dev/ttyACM0" >&2
+            exit 1
+        fi
+        ;;
+    device)
+        # Native Linux can pass the real device into the container. Add the
+        # runtime user to the device group so su keeps access after login.
+        if [ "$SERIAL_GID" != "0" ]; then
+            SERIAL_GROUP=$(getent group "$SERIAL_GID" | cut -d: -f1)
+            if [ -z "$SERIAL_GROUP" ]; then
+                SERIAL_GROUP=hostserial
+                groupadd -g "$SERIAL_GID" "$SERIAL_GROUP" 2>/dev/null || true
+            fi
+            usermod -aG "$SERIAL_GROUP" roscon
+        fi
+        ;;
+    none)
+        ;;
+    *)
+        echo "[WARN] Unknown SERIAL_MODE=$SERIAL_MODE, starting without serial setup" >&2
+        ;;
+esac
