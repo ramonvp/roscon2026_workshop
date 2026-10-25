@@ -8,7 +8,7 @@ ros::NodeHandle nh;
 std_msgs::msg::String str_msg;
 ros::Publisher pub("chatter", &str_msg);
 std_msgs::msg::Int32 int_msg;
-ros::Publisher int_pub("numbers", &int_msg);
+ros::Publisher int_pub("counter", &int_msg);
 
 void enable_led_service(const std_srvs::srv::SetBool::Request& req,
                             std_srvs::srv::SetBool::Response& res)
@@ -26,7 +26,7 @@ void setup() {
   nh.advertise(int_pub);
   nh.advertiseService(service_server);
 
-  str_msg.data = "Hello, ROS!";
+  str_msg.data = "Hello, ROS2!";
   int_msg.data = 0;
 
   pinMode(LED_BUILTIN, OUTPUT);
