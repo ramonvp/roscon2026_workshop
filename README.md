@@ -32,7 +32,7 @@ code -n arduino_ros2serial
 ```
 
 In VS Code, install the plugin named "PlatformIO IDE".
-[[https://github.com/ramonvp/roscon2026_workshop/blob/main/images/platformio_ide.png|alt=platformio_ide]]
+<img src="images/platformio_ide.png" alt="PlatformIO IDE" width="300">
 
 You might need to install this extra package:
 
@@ -41,7 +41,7 @@ sudo apt install python3-venv
 ```
 
 Afterwards, you will have a new icon on the left vertical bar:
-[[https://github.com/ramonvp/roscon2026_workshop/blob/main/images/platformio_icon.png|alt=platformio_icon]]
+<img src="images/platformio_icon.png" alt="PlatformIO icon" height="250">
 
 Open PlatformIO and Create New Project.
 
